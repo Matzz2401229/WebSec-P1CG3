@@ -10,8 +10,8 @@ ICT2214 Web Security Project
 2. Clone this repo: ``git clone https://github.com/Matzz2401229/WebSec-P1CG3.git``
 3. Navigate: ``cd WebSec-P1CG3``
 4. Start: ``docker-compose up``
-5. Access WAF: http://localhost:8080
-6. Access Juice Shop (direct): http://localhost:3000
+5. Access Juice Shop (with WAF): http://localhost:8080
+6. Access Juice Shop (no WAF): http://localhost:3000
 
 ## Test Attack Blocking
 
