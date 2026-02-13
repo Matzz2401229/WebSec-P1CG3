@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  # OWASP Juice Shop
+  juiceshop:
+    image: bkimminich/juice-shop
+    container_name: wafguard-juiceshop
+    ports:
+      - "3000:3000"
+    networks:
+      - wafguard-network
+
+  # ModSecurity WAF with OWASP CRS
+  modsecurity:
+    image: owasp/modsecurity-crs:nginx-alpine
+    container_name: wafguard-modsecurity
+    ports:
+      - "8080:8080"
+    environment:
+      - BACKEND=http://juiceshop:3000
+      - PORT=8080
+      - PARANOIA=1
+      - ANOMALY_INBOUND=5
+      - ANOMALY_OUTBOUND=4
+    depends_on:
+      - juiceshop
+    networks:
+      - wafguard-network
+
+  # MySQL Database
+  database:
+    image: mysql:8.0
+    container_name: wafguard-database
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpass123
+      - MYSQL_DATABASE=wafguard
+      - MYSQL_USER=wafguard
+      - MYSQL_PASSWORD=wafguard123
+    ports:
+      - "3306:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - wafguard-network
+    command: --default-authentication-plugin=mysql_native_password
+
+networks:
+  wafguard-network:
+    driver: bridge
+
+volumes:
+  db-data:
