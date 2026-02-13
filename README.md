@@ -15,7 +15,7 @@ ICT2214 Web Security Project
 
 ## Test Attack Blocking
 
-Try: ``http://localhost:8080/?q=<script>alert(1)</script>``
+Try: ``http://localhost/?q=<script>alert(1)</script>``
 
 Should get 403 Forbidden!
 
