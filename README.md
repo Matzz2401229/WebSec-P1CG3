@@ -22,4 +22,3 @@ Should get 403 Forbidden!
 ## Stop
 
 ``docker-compose down``
-"@ | Out-File -FilePath README.md -Encoding UTF8
