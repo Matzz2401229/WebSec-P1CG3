@@ -1,4 +1,25 @@
 services:
+  frontend:
+    image: node:18-alpine
+    container_name: wafguard-frontend
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3002:3000"
+    command: sh -c "npm install && npm start"
+    environment:
+      - REACT_APP_API_URL=http://localhost:3001
+      - HOST=0.0.0.0
+      - PORT=3000
+      - WATCHPACK_POLLING=true
+    stdin_open: true
+    tty: true
+    networks:
+      - wafguard-network
+
+
   juiceshop:
     image: bkimminich/juice-shop
     container_name: wafguard-juiceshop
@@ -11,15 +32,36 @@ services:
     image: owasp/modsecurity-crs:nginx-alpine
     container_name: wafguard-modsecurity
     ports:
-      - "8080:8080"                  # WAF‑protected entry
+      - "8080:8080"
     environment:
       - BACKEND=http://juiceshop:3000
       - PORT=8080
-      - PARANOIA=1
-      - ANOMALY_INBOUND=5
-      - ANOMALY_OUTBOUND=4
+      - MODSEC_RULE_ENGINE=On
+      - BLOCKING_PARANOIA=1  
+    volumes:
+      - ./logs/nginx:/var/log/nginx
+      - ./nginx/modsecurity-override.conf.template:/etc/nginx/templates/modsecurity.d/modsecurity-override.conf.template
+      - ./logs/audit:/var/log/modsecurity/audit
     depends_on:
       - juiceshop
+    networks:
+      - wafguard-network
+
+  dashboard:
+    build: ./dashboard
+    container_name: wafguard-dashboard
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./logs/nginx:/var/log/nginx
+      - ./logs/audit:/var/log/modsecurity/audit
+    depends_on:
+      - database
+    environment:
+      - DB_HOST=database
+      - DB_USER=wafguard
+      - DB_PASSWORD=wafguard123
+      - DB_NAME=wafguard
     networks:
       - wafguard-network
 
@@ -32,25 +74,10 @@ services:
       - MYSQL_USER=wafguard
       - MYSQL_PASSWORD=wafguard123
     ports:
-      - "3306:3306"                  # for dev only
+      - "3306:3306"
     volumes:
       - db-data:/var/lib/mysql
-    networks:
-      - wafguard-network
-    command: --default-authentication-plugin=mysql_native_password
-
-  dashboard:
-    build: ./dashboard          # Python (FastAPI) or Node.js
-    container_name: wafguard-dashboard
-    ports:
-      - "3001:3000"             # different port from Juice Shop (3000)
-    depends_on:
-      - database
-    environment:
-      - DB_HOST=database        # service name inside Docker network
-      - DB_USER=wafguard
-      - DB_PASSWORD=wafguard123
-      - DB_NAME=wafguard
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - wafguard-network
 
