@@ -1,21 +1,17 @@
-version: '3.8'
-
 services:
-  # OWASP Juice Shop
   juiceshop:
     image: bkimminich/juice-shop
     container_name: wafguard-juiceshop
     ports:
-      - "3000:3000"
+      - "3000:3000"                  # exposed to host: only Juice Shop
     networks:
       - wafguard-network
 
-  # ModSecurity WAF with OWASP CRS
   modsecurity:
     image: owasp/modsecurity-crs:nginx-alpine
     container_name: wafguard-modsecurity
     ports:
-      - "80:8080"
+      - "8080:8080"                  # WAF‑protected entry
     environment:
       - BACKEND=http://juiceshop:3000
       - PORT=8080
@@ -27,7 +23,6 @@ services:
     networks:
       - wafguard-network
 
-  # MySQL Database
   database:
     image: mysql:8.0
     container_name: wafguard-database
@@ -37,12 +32,27 @@ services:
       - MYSQL_USER=wafguard
       - MYSQL_PASSWORD=wafguard123
     ports:
-      - "3306:3306"
+      - "3306:3306"                  # for dev only
     volumes:
       - db-data:/var/lib/mysql
     networks:
       - wafguard-network
     command: --default-authentication-plugin=mysql_native_password
+
+  dashboard:
+    build: ./dashboard          # Python (FastAPI) or Node.js
+    container_name: wafguard-dashboard
+    ports:
+      - "3001:3000"             # different port from Juice Shop (3000)
+    depends_on:
+      - database
+    environment:
+      - DB_HOST=database        # service name inside Docker network
+      - DB_USER=wafguard
+      - DB_PASSWORD=wafguard123
+      - DB_NAME=wafguard
+    networks:
+      - wafguard-network
 
 networks:
   wafguard-network:
