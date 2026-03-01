@@ -291,8 +291,10 @@ body {
 }
 
 .active-tab {
-  color: #333;
+  color: #dc3545; 
   font-weight: 700;
+  border-bottom: 3px solid #dc3545; 
+  padding-bottom: 5px; 
 }
 
 .inactive-tab {
@@ -329,4 +331,32 @@ body {
 
 .btn-delete-bulk:hover {
   background: #c82333;
+}
+
+/* --- CHECKBOX & SELECTED DELETE STYLES --- */
+.checkbox-cell {
+  text-align: center;
+  width: 40px;
+}
+
+.checkbox-cell input {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+.btn-delete-selected {
+  background: #fd7e14; /* Orange color to stand out from red */
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+}
+
+.btn-delete-selected:hover {
+  background: #e8590c;
+}
+
+.btn-delete-selected:disabled {
+  background: #f8c09d;
+  cursor: not-allowed;
 }

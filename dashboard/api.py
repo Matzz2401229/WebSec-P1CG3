@@ -136,11 +136,11 @@ class ClearEventsRequest(BaseModel):
     rule_id: Optional[str] = None
     filter_date: Optional[str] = None
     filter_time: Optional[str] = None
-    event_id: Optional[int] = None  
+    event_ids: Optional[List[int]] = None  # UPDATED: Now takes a list of IDs for checkboxes
 
 @app.post("/api/events/clear")
 def clear_events(req: ClearEventsRequest):
-    """Clear events based on rule ID, specific date, specific time, or single ID"""
+    """Clear events based on rule ID, specific date, specific time, or multiple selected IDs"""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -148,12 +148,13 @@ def clear_events(req: ClearEventsRequest):
         query = "DELETE FROM events WHERE 1=1"
         params = []
         
-        # If a specific event ID is provided, ONLY delete that one
-        if req.event_id:
-            query += " AND id = %s"
-            params.append(req.event_id)
+        # If specific event IDs are provided from the checkboxes, ONLY delete those
+        if req.event_ids and len(req.event_ids) > 0:
+            format_strings = ','.join(['%s'] * len(req.event_ids))
+            query += f" AND id IN ({format_strings})"
+            params.extend(req.event_ids)
         else:
-            # Otherwise, use the bulk filters
+            # Otherwise, use the bulk text filters
             if req.rule_id:
                 query += " AND rule_id = %s"
                 params.append(req.rule_id)
@@ -163,12 +164,11 @@ def clear_events(req: ClearEventsRequest):
                 params.append(req.filter_date)
                 
             if req.filter_time:
-                # Matches the specific hour and minute
                 query += " AND TIME(timestamp) LIKE %s"
                 params.append(f"{req.filter_time}%")
             
         # If NO filters are provided at all, wipe the whole table instantly
-        if not req.rule_id and not req.filter_date and not req.filter_time and not req.event_id:
+        if not req.rule_id and not req.filter_date and not req.filter_time and not req.event_ids:
             cursor.execute("TRUNCATE TABLE events")
             deleted_count = "all"
         else:

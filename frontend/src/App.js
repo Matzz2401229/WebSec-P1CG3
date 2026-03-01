@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 
-// IMPORTANT: Use the correct API URL
-//const API_BASE = 'http://localhost:3001/api';
 const API_BASE = window.location.origin + '/api';
 
 function App() {
@@ -17,8 +15,11 @@ function App() {
   // Tab State & Independent Filter States
   const [activeTab, setActiveTab] = useState('events'); 
   const [deleteRuleId, setDeleteRuleId] = useState('');
-  const [deleteDate, setDeleteDate] = useState(''); // e.g. "2023-10-25"
-  const [deleteTime, setDeleteTime] = useState(''); // e.g. "14:30"
+  const [deleteDate, setDeleteDate] = useState('');
+  const [deleteTime, setDeleteTime] = useState('');
+
+  // NEW: Checkbox state for multiple deletions
+  const [selectedLogs, setSelectedLogs] = useState([]);
 
   const fetchEvents = async () => {
     try {
@@ -65,10 +66,44 @@ function App() {
     }
   };
 
-  // Handle Bulk Clear Logs
-  const handleBulkClearLogs = async () => {
-    if (!window.confirm("Delete these filtered logs? This cannot be undone.")) return;
+  // Dynamically filter events by Date AND/OR Time AND/OR Rule ID
+  const filteredEvents = events.filter(event => {
+    let match = true;
+    if (deleteRuleId && event.rule_id !== deleteRuleId) match = false;
+    if (deleteDate) {
+      const d = new Date(event.timestamp);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      if (`${yyyy}-${mm}-${dd}` !== deleteDate) match = false;
+    }
+    if (deleteTime) {
+      const d = new Date(event.timestamp);
+      const hh = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      if (`${hh}:${min}` !== deleteTime) match = false;
+    }
+    return match;
+  });
 
+  // Checkbox Handlers
+  const toggleSelection = (id) => {
+    setSelectedLogs(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const toggleAll = (e) => {
+    if (e.target.checked) {
+      setSelectedLogs(filteredEvents.map(evt => evt.id));
+    } else {
+      setSelectedLogs([]);
+    }
+  };
+
+  // DELETION HANDLERS
+  const handleBulkClearLogs = async () => {
+    if (!window.confirm(`Delete ALL ${filteredEvents.length} filtered logs? This cannot be undone.`)) return;
     try {
       await fetch(`${API_BASE}/events/clear`, {
         method: 'POST',
@@ -79,10 +114,10 @@ function App() {
           filter_time: deleteTime || null
         })
       });
-      
       setDeleteRuleId('');
       setDeleteDate('');
       setDeleteTime('');
+      setSelectedLogs([]); // clear selections
       fetchEvents();
       fetchStats();
     } catch (error) {
@@ -96,12 +131,30 @@ function App() {
       await fetch(`${API_BASE}/events/clear`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ event_id: eventId })
+        body: JSON.stringify({ event_ids: [eventId] }) // Passed as array to API
       });
+      setSelectedLogs(prev => prev.filter(id => id !== eventId));
       fetchEvents();
       fetchStats();
     } catch (error) {
       console.error('Error deleting log:', error);
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedLogs.length === 0) return;
+    if (!window.confirm(`Delete the ${selectedLogs.length} checked logs?`)) return;
+    try {
+      await fetch(`${API_BASE}/events/clear`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event_ids: selectedLogs })
+      });
+      setSelectedLogs([]); // reset checkboxes
+      fetchEvents();
+      fetchStats();
+    } catch (error) {
+      console.error('Error deleting logs:', error);
     }
   };
 
@@ -113,33 +166,6 @@ function App() {
     if (ruleId.startsWith('930')) return 'badge-yellow'; 
     return 'badge-gray';
   };
-
-  // Dynamically filter events by Date AND/OR Time AND/OR Rule ID
-  const filteredEvents = events.filter(event => {
-    let match = true;
-    
-    // 1. Filter by Rule ID
-    if (deleteRuleId && event.rule_id !== deleteRuleId) match = false;
-    
-    // 2. Filter exactly by Date (YYYY-MM-DD)
-    if (deleteDate) {
-      const d = new Date(event.timestamp);
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const dd = String(d.getDate()).padStart(2, '0');
-      if (`${yyyy}-${mm}-${dd}` !== deleteDate) match = false;
-    }
-
-    // 3. Filter exactly by Time (HH:MM)
-    if (deleteTime) {
-      const d = new Date(event.timestamp);
-      const hh = String(d.getHours()).padStart(2, '0');
-      const min = String(d.getMinutes()).padStart(2, '0');
-      if (`${hh}:${min}` !== deleteTime) match = false;
-    }
-
-    return match;
-  });
 
   if (loading) return <div className="loading"><p>Loading WAFGuard...</p></div>;
 
@@ -167,7 +193,7 @@ function App() {
         <div className="tabs-header">
           <h2 
             className={`tab-title ${activeTab === 'events' ? 'active-tab' : 'inactive-tab'}`}
-            onClick={() => setActiveTab('events')}
+            onClick={() => { setActiveTab('events'); setSelectedLogs([]); }}
           >
             Security Events ({events.length})
           </h2>
@@ -241,48 +267,103 @@ function App() {
                   placeholder="Filter Rule ID"
                   value={deleteRuleId}
                   onChange={(e) => setDeleteRuleId(e.target.value)}
+                  className="standard-input"
                 />
-                <input
-                  type="date"
-                  title="Filter exactly by Date"
-                  value={deleteDate}
-                  onChange={(e) => setDeleteDate(e.target.value)}
-                />
-                <input
-                  type="time"
-                  title="Filter exactly by Time"
-                  value={deleteTime}
-                  onChange={(e) => setDeleteTime(e.target.value)}
-                />
+                
+                <div className="labeled-input">
+                  <label>Date:</label>
+                  <input
+                    type="date"
+                    title="Filter exactly by Date"
+                    value={deleteDate}
+                    onChange={(e) => setDeleteDate(e.target.value)}
+                  />
+                </div>
+
+                <div className="labeled-input">
+                  <label>Time:</label>
+                  <input
+                    type="time"
+                    title="Filter exactly by Time"
+                    value={deleteTime}
+                    onChange={(e) => setDeleteTime(e.target.value)}
+                  />
+                </div>
+
                 <button className="btn btn-delete-bulk" onClick={handleBulkClearLogs}>
                   Delete Filtered ({filteredEvents.length})
                 </button>
+                <button 
+                  className="btn btn-delete-selected" 
+                  onClick={handleDeleteSelected}
+                  disabled={selectedLogs.length === 0}
+                >
+                  Delete Checked ({selectedLogs.length})
+                </button>
               </div>
-              <small className="help-text">Filters isolate exact matches. Leave all blank to delete EVERYTHING.</small>
+              <small className="help-text">Filters isolate exact matches. Check boxes to pick specific rows, or use filters to bulk wipe.</small>
             </div>
 
             <div className="table-container">
               <table className="events-table">
                 <thead>
-                  <tr><th>Time</th><th>Source IP</th><th>Rule ID</th><th>Target URI</th><th>Cleanup Action</th></tr>
+                  <tr>
+                    <th className="checkbox-cell">
+                      <input 
+                        type="checkbox" 
+                        onChange={toggleAll} 
+                        checked={filteredEvents.length > 0 && selectedLogs.length === filteredEvents.length}
+                        title="Select All"
+                      />
+                    </th>
+                    <th>Time</th>
+                    <th>Source IP</th>
+                    <th>Rule ID</th>
+                    <th>Attack Type</th>
+                    <th>Target URI</th>
+                    <th>Cleanup Action</th>
+                  </tr>
                 </thead>
                 <tbody>
                   {filteredEvents.map((event) => (
-                    <tr key={`mgr-${event.id}`}>
-                      <td>{formatTime(event.timestamp)}</td>
-                      <td className="ip-cell">{event.src_ip}</td>
-                      <td><span className={`badge ${getSeverityColor(event.rule_id)}`}>{event.rule_id}</span></td>
-                      <td className="uri-cell">{event.uri}</td>
-                      <td className="actions-cell">
-                        <button className="btn btn-delete-single" onClick={() => handleDeleteSingle(event.id)}>
-                          Delete Row
-                        </button>
-                      </td>
-                    </tr>
+                    <React.Fragment key={`mgr-${event.id}`}>
+                      <tr>
+                        <td className="checkbox-cell">
+                          <input 
+                            type="checkbox" 
+                            checked={selectedLogs.includes(event.id)}
+                            onChange={() => toggleSelection(event.id)}
+                          />
+                        </td>
+                        <td>{formatTime(event.timestamp)}</td>
+                        <td className="ip-cell">{event.src_ip}</td>
+                        <td><span className={`badge ${getSeverityColor(event.rule_id)}`}>{event.rule_id}</span></td>
+                        <td className="payload-cell">{event.payload}</td>
+                        <td className="uri-cell">{event.uri}</td>
+                        <td className="actions-cell">
+                          <button className="btn btn-expand" onClick={() => setExpandedRow(expandedRow === event.id ? null : event.id)}>
+                            {expandedRow === event.id ? 'Collapse ▲' : 'Expand ▼'}
+                          </button>
+                          <button className="btn btn-delete-single" onClick={() => handleDeleteSingle(event.id)}>
+                            Delete Row
+                          </button>
+                        </td>
+                      </tr>
+                      {expandedRow === event.id && (
+                        <tr className="expanded-row">
+                          <td colSpan={7}>
+                            <div className="expanded-details">
+                              <p><strong>Full Payload:</strong> {event.payload}</p>
+                              <p><strong>Full URI:</strong> {event.uri}</p>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   ))}
                   {filteredEvents.length === 0 && (
                     <tr>
-                      <td colSpan={5} style={{textAlign: 'center', padding: '20px', color: '#666'}}>
+                      <td colSpan={7} style={{textAlign: 'center', padding: '20px', color: '#666'}}>
                         No logs match these filters.
                       </td>
                     </tr>
