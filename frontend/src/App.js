@@ -12,6 +12,8 @@ function App() {
   const [error, setError] = useState(null);
   const pollingRef = useRef(null);
 
+  const [expandedRow, setExpandedRow] = useState(null); // Tracks which row is expanded (stores event.id, null = all collapsed)
+
   // Fetch events from API
   const fetchEvents = async () => {
     try {
@@ -182,8 +184,12 @@ function App() {
                 </tr>
               </thead>
               <tbody>
-                {events.map((event) => (
-                  <tr key={event.id}>
+                {events.map((event) => (              
+                  <> 
+                  {/* Fragment needed to return two <tr> elements per row without invalid HTML wrapper */}
+                  {/* Clicking the button toggles the expanded detail view below it */}
+
+                  <tr key={event.id} style={{cursor: 'default'}}>
                     <td>{formatTime(event.timestamp)}</td>
                     <td className="ip-cell">{event.src_ip}</td>
                     <td>
@@ -199,6 +205,12 @@ function App() {
                       </span>
                     </td>
                     <td className="actions-cell">
+                      <button
+                        className="btn btn-expand"
+                        onClick={() => setExpandedRow(expandedRow === event.id ? null : event.id)}
+                      >
+                        {expandedRow === event.id ? 'Collapse ▲' : 'Expand ▼'}
+                      </button>
                       <button 
                         className="btn btn-allow"
                         onClick={() => handleAction(event.id, 'allow')}
@@ -213,6 +225,19 @@ function App() {
                       </button>
                     </td>
                   </tr>
+
+                  {/* Conditionally renders a detail row beneath the clicked event row */}
+                  {expandedRow === event.id && (
+                      <tr className="expanded-row">
+                        <td colSpan={7}>
+                          <div className="expanded-details">
+                            <p><strong>Full Payload:</strong> {event.payload}</p>
+                            <p><strong>Full URI:</strong> {event.uri}</p>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 ))}
               </tbody>
             </table>

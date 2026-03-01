@@ -203,3 +203,27 @@ body {
 .btn-block:hover {
   background: #c82333;
 }
+
+.btn-expand {
+  background: #667eea;
+  color: white;
+}
+
+.btn-expand:hover {
+  background: #5a6fd6;
+}
+
+.expanded-row {
+  background: #f0f4ff;
+}
+
+.expanded-details {
+  padding: 12px;
+  word-break: break-all;
+  white-space: normal;
+  max-height: 200px;
+  overflow-y: auto;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
