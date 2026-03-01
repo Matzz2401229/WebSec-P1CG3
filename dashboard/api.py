@@ -4,13 +4,14 @@ import mysql.connector
 import os
 from datetime import datetime
 from typing import List, Optional
+from pydantic import BaseModel
 
 app = FastAPI(title="WAFGuard API")
 
 # Enable CORS for React frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3002", "http://localhost:3000"],  # React dev server
+    allow_origins=["http://localhost:3002", "http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -127,5 +128,57 @@ def update_event_action(event_id: int, action: str):
         conn.close()
         
         return {"success": True, "message": f"Event {event_id} updated to {action}"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+    
+# --- LOG MANAGER ENDPOINT ---
+class ClearEventsRequest(BaseModel):
+    rule_id: Optional[str] = None
+    filter_date: Optional[str] = None
+    filter_time: Optional[str] = None
+    event_id: Optional[int] = None  
+
+@app.post("/api/events/clear")
+def clear_events(req: ClearEventsRequest):
+    """Clear events based on rule ID, specific date, specific time, or single ID"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        query = "DELETE FROM events WHERE 1=1"
+        params = []
+        
+        # If a specific event ID is provided, ONLY delete that one
+        if req.event_id:
+            query += " AND id = %s"
+            params.append(req.event_id)
+        else:
+            # Otherwise, use the bulk filters
+            if req.rule_id:
+                query += " AND rule_id = %s"
+                params.append(req.rule_id)
+                
+            if req.filter_date:
+                query += " AND DATE(timestamp) = %s"
+                params.append(req.filter_date)
+                
+            if req.filter_time:
+                # Matches the specific hour and minute
+                query += " AND TIME(timestamp) LIKE %s"
+                params.append(f"{req.filter_time}%")
+            
+        # If NO filters are provided at all, wipe the whole table instantly
+        if not req.rule_id and not req.filter_date and not req.filter_time and not req.event_id:
+            cursor.execute("TRUNCATE TABLE events")
+            deleted_count = "all"
+        else:
+            cursor.execute(query, tuple(params))
+            deleted_count = cursor.rowcount
+            
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return {"success": True, "message": f"Deleted {deleted_count} events."}
     except Exception as e:
         return {"success": False, "error": str(e)}
