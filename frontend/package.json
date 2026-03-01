@@ -1,5 +1,6 @@
 {
   "name": "wafguard-dashboard",
+  "homepage": "/frontend",
   "version": "1.0.0",
   "private": true,
   "dependencies": {

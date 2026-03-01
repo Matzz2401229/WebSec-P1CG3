@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 
 // IMPORTANT: Use the correct API URL
-const API_BASE = 'http://localhost:3001/api';
+//const API_BASE = 'http://localhost:3001/api';
+const API_BASE = window.location.origin + '/api';
 
 function App() {
   const [events, setEvents] = useState([]);

@@ -1,0 +1,86 @@
+2026/03/01 07:16:24 [warn] 1#1: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/conf/server.crt"
+2026/03/01 07:16:24 [notice] 1#1: ModSecurity-nginx v1.0.4 (rules loaded inline/local/remote: 0/845/0)
+2026/03/01 07:16:24 [notice] 1#1: libmodsecurity3 version 3.0.14
+2026/03/01 07:22:17 [warn] 1#1: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/conf/server.crt"
+2026/03/01 07:22:17 [notice] 1#1: ModSecurity-nginx v1.0.4 (rules loaded inline/local/remote: 0/845/0)
+2026/03/01 07:22:17 [notice] 1#1: libmodsecurity3 version 3.0.14
+2026/03/01 07:44:05 [warn] 1#1: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/conf/server.crt"
+2026/03/01 07:44:05 [notice] 1#1: ModSecurity-nginx v1.0.4 (rules loaded inline/local/remote: 0/845/0)
+2026/03/01 07:44:05 [notice] 1#1: libmodsecurity3 version 3.0.14
+2026/03/01 08:00:11 [warn] 1#1: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/conf/server.crt"
+2026/03/01 08:00:11 [notice] 1#1: ModSecurity-nginx v1.0.4 (rules loaded inline/local/remote: 0/845/0)
+2026/03/01 08:00:11 [notice] 1#1: libmodsecurity3 version 3.0.14
+2026/03/01 08:11:35 [warn] 1#1: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/conf/server.crt"
+2026/03/01 08:11:35 [notice] 1#1: ModSecurity-nginx v1.0.4 (rules loaded inline/local/remote: 0/845/0)
+2026/03/01 08:11:35 [notice] 1#1: libmodsecurity3 version 3.0.14
+2026/03/01 08:30:53 [warn] 1#1: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/conf/server.crt"
+2026/03/01 08:30:53 [notice] 1#1: ModSecurity-nginx v1.0.4 (rules loaded inline/local/remote: 0/845/0)
+2026/03/01 08:30:53 [notice] 1#1: libmodsecurity3 version 3.0.14
+2026/03/01 08:47:57 [warn] 1#1: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/conf/server.crt"
+2026/03/01 08:47:57 [notice] 1#1: ModSecurity-nginx v1.0.4 (rules loaded inline/local/remote: 0/845/0)
+2026/03/01 08:47:57 [notice] 1#1: libmodsecurity3 version 3.0.14
+2026/03/01 09:02:17 [warn] 1#1: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/conf/server.crt"
+2026/03/01 09:02:17 [notice] 1#1: ModSecurity-nginx v1.0.4 (rules loaded inline/local/remote: 0/845/0)
+2026/03/01 09:02:17 [notice] 1#1: libmodsecurity3 version 3.0.14
+2026/03/01 10:02:27 [warn] 1#1: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/conf/server.crt"
+2026/03/01 10:02:27 [notice] 1#1: ModSecurity-nginx v1.0.4 (rules loaded inline/local/remote: 0/845/0)
+2026/03/01 10:02:27 [notice] 1#1: libmodsecurity3 version 3.0.14
+2026/03/01 10:16:54 [error] 588#588: *62 [client 172.18.0.7] ModSecurity: Access denied with code 403 (phase 2). Matched "Operator `Ge' with parameter `5' against variable `TX:BLOCKING_INBOUND_ANOMALY_SCORE' (Value: `5' ) [file "/etc/modsecurity.d/owasp-crs/rules/REQUEST-949-BLOCKING-EVALUATION.conf"] [line "222"] [id "949110"] [rev ""] [msg "Inbound Anomaly Score Exceeded (Total Score: 5)"] [data ""] [severity "0"] [ver "OWASP_CRS/4.23.0"] [maturity "0"] [accuracy "0"] [tag "modsecurity"] [tag "anomaly-evaluation"] [tag "OWASP_CRS"] [hostname "modsecurity"] [uri "/"] [unique_id "177236021430.872535"] [ref ""], client: 172.18.0.7, server: localhost, request: "GET /?id=1'%20OR%20'1'='1 HTTP/1.0", host: "modsecurity:8080"
+2026/03/01 10:17:33 [error] 588#588: *69 [client 172.18.0.7] ModSecurity: Access denied with code 403 (phase 2). Matched "Operator `Ge' with parameter `5' against variable `TX:BLOCKING_INBOUND_ANOMALY_SCORE' (Value: `30' ) [file "/etc/modsecurity.d/owasp-crs/rules/REQUEST-949-BLOCKING-EVALUATION.conf"] [line "222"] [id "949110"] [rev ""] [msg "Inbound Anomaly Score Exceeded (Total Score: 30)"] [data ""] [severity "0"] [ver "OWASP_CRS/4.23.0"] [maturity "0"] [accuracy "0"] [tag "modsecurity"] [tag "anomaly-evaluation"] [tag "OWASP_CRS"] [hostname "modsecurity"] [uri "/rest/products/search"] [unique_id "177236025315.519958"] [ref ""], client: 172.18.0.7, server: localhost, request: "GET /rest/products/search?q=../../../etc/passwd HTTP/1.0", host: "modsecurity:8080"
+2026/03/01 10:17:36 [error] 588#588: *72 [client 172.18.0.7] ModSecurity: Access denied with code 403 (phase 2). Matched "Operator `Ge' with parameter `5' against variable `TX:BLOCKING_INBOUND_ANOMALY_SCORE' (Value: `50' ) [file "/etc/modsecurity.d/owasp-crs/rules/REQUEST-949-BLOCKING-EVALUATION.conf"] [line "222"] [id "949110"] [rev ""] [msg "Inbound Anomaly Score Exceeded (Total Score: 50)"] [data ""] [severity "0"] [ver "OWASP_CRS/4.23.0"] [maturity "0"] [accuracy "0"] [tag "modsecurity"] [tag "anomaly-evaluation"] [tag "OWASP_CRS"] [hostname "modsecurity"] [uri "/rest/products/price"] [unique_id "177236025688.248798"] [ref ""], client: 172.18.0.7, server: localhost, request: "GET /rest/products/price?product=1%00../../etc/passwd HTTP/1.0", host: "modsecurity:8080"
+2026/03/01 10:18:55 [warn] 1#1: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/conf/server.crt"
+2026/03/01 10:18:55 [notice] 1#1: ModSecurity-nginx v1.0.4 (rules loaded inline/local/remote: 0/845/0)
+2026/03/01 10:18:55 [notice] 1#1: libmodsecurity3 version 3.0.14
+2026/03/01 10:19:50 [error] 579#579: *3 connect() failed (111: Connection refused) while connecting to upstream, client: 172.18.0.7, server: localhost, request: "GET /favicon.ico HTTP/1.0", upstream: "http://172.18.0.3:3000/favicon.ico", host: "modsecurity:8080", referrer: "http://localhost/frontend/"
+2026/03/01 10:20:39 [error] 581#581: *7 connect() failed (111: Connection refused) while connecting to upstream, client: 172.18.0.7, server: localhost, request: "GET /ws HTTP/1.0", upstream: "http://172.18.0.3:3000/ws", host: "modsecurity:8080"
+2026/03/01 10:20:40 [error] 582#582: *9 connect() failed (111: Connection refused) while connecting to upstream, client: 172.18.0.7, server: localhost, request: "GET /favicon.ico HTTP/1.0", upstream: "http://172.18.0.3:3000/favicon.ico", host: "modsecurity:8080", referrer: "http://localhost/frontend/"
+2026/03/01 10:20:41 [error] 580#580: *11 connect() failed (111: Connection refused) while connecting to upstream, client: 172.18.0.7, server: localhost, request: "GET /ws HTTP/1.0", upstream: "http://172.18.0.3:3000/ws", host: "modsecurity:8080"
+2026/03/01 10:20:44 [error] 583#583: *13 connect() failed (111: Connection refused) while connecting to upstream, client: 172.18.0.7, server: localhost, request: "GET /ws HTTP/1.0", upstream: "http://172.18.0.3:3000/ws", host: "modsecurity:8080"
+2026/03/01 10:20:47 [error] 584#584: *15 connect() failed (111: Connection refused) while connecting to upstream, client: 172.18.0.7, server: localhost, request: "GET /ws HTTP/1.0", upstream: "http://172.18.0.3:3000/ws", host: "modsecurity:8080"
+2026/03/01 10:20:56 [error] 585#585: *17 connect() failed (111: Connection refused) while connecting to upstream, client: 172.18.0.7, server: localhost, request: "GET /ws HTTP/1.0", upstream: "http://172.18.0.3:3000/ws", host: "modsecurity:8080"
+2026/03/01 10:21:37 [error] 586#586: *21 connect() failed (111: Connection refused) while connecting to upstream, client: 172.18.0.7, server: localhost, request: "GET /ws HTTP/1.0", upstream: "http://172.18.0.3:3000/ws", host: "modsecurity:8080"
+2026/03/01 10:24:18 [warn] 1#1: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/conf/server.crt"
+2026/03/01 10:24:18 [notice] 1#1: ModSecurity-nginx v1.0.4 (rules loaded inline/local/remote: 0/845/0)
+2026/03/01 10:24:18 [notice] 1#1: libmodsecurity3 version 3.0.14
+2026/03/01 10:25:15 [error] 579#579: *2 connect() failed (111: Connection refused) while connecting to upstream, client: 172.18.0.7, server: localhost, request: "GET /ws HTTP/1.0", upstream: "http://172.18.0.2:3000/ws", host: "modsecurity:8080"
+2026/03/01 10:25:15 [error] 580#580: *4 connect() failed (111: Connection refused) while connecting to upstream, client: 172.18.0.7, server: localhost, request: "GET /favicon.ico HTTP/1.0", upstream: "http://172.18.0.2:3000/favicon.ico", host: "modsecurity:8080", referrer: "http://localhost/frontend/"
+2026/03/01 10:25:16 [error] 581#581: *7 connect() failed (111: Connection refused) while connecting to upstream, client: 172.18.0.7, server: localhost, request: "GET /ws HTTP/1.0", upstream: "http://172.18.0.2:3000/ws", host: "modsecurity:8080"
+2026/03/01 10:25:20 [error] 582#582: *9 connect() failed (111: Connection refused) while connecting to upstream, client: 172.18.0.7, server: localhost, request: "GET /ws HTTP/1.0", upstream: "http://172.18.0.2:3000/ws", host: "modsecurity:8080"
+2026/03/01 10:25:36 [error] 583#583: *11 connect() failed (111: Connection refused) while connecting to upstream, client: 172.18.0.7, server: localhost, request: "GET /ws HTTP/1.0", upstream: "http://172.18.0.2:3000/ws", host: "modsecurity:8080"
+2026/03/01 10:25:42 [error] 584#584: *13 connect() failed (111: Connection refused) while connecting to upstream, client: 172.18.0.7, server: localhost, request: "GET /favicon.ico HTTP/1.0", upstream: "http://172.18.0.2:3000/favicon.ico", host: "modsecurity:8080", referrer: "http://localhost/frontend/"
+2026/03/01 10:27:11 [warn] 1#1: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/conf/server.crt"
+2026/03/01 10:27:11 [notice] 1#1: ModSecurity-nginx v1.0.4 (rules loaded inline/local/remote: 0/845/0)
+2026/03/01 10:27:11 [notice] 1#1: libmodsecurity3 version 3.0.14
+2026/03/01 10:33:58 [warn] 1#1: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/conf/server.crt"
+2026/03/01 10:33:58 [notice] 1#1: ModSecurity-nginx v1.0.4 (rules loaded inline/local/remote: 0/845/0)
+2026/03/01 10:33:58 [notice] 1#1: libmodsecurity3 version 3.0.14
+2026/03/01 10:37:14 [warn] 1#1: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/conf/server.crt"
+2026/03/01 10:37:14 [notice] 1#1: ModSecurity-nginx v1.0.4 (rules loaded inline/local/remote: 0/845/0)
+2026/03/01 10:37:14 [notice] 1#1: libmodsecurity3 version 3.0.14
+2026/03/01 10:43:35 [warn] 1#1: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/conf/server.crt"
+2026/03/01 10:43:35 [notice] 1#1: ModSecurity-nginx v1.0.4 (rules loaded inline/local/remote: 0/845/0)
+2026/03/01 10:43:35 [notice] 1#1: libmodsecurity3 version 3.0.14
+2026/03/01 10:49:04 [warn] 1#1: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/conf/server.crt"
+2026/03/01 10:49:04 [notice] 1#1: ModSecurity-nginx v1.0.4 (rules loaded inline/local/remote: 0/845/0)
+2026/03/01 10:49:04 [notice] 1#1: libmodsecurity3 version 3.0.14
+2026/03/01 10:52:11 [warn] 1#1: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/conf/server.crt"
+2026/03/01 10:52:11 [notice] 1#1: ModSecurity-nginx v1.0.4 (rules loaded inline/local/remote: 0/845/0)
+2026/03/01 10:52:11 [notice] 1#1: libmodsecurity3 version 3.0.14
+2026/03/01 10:56:34 [warn] 1#1: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/conf/server.crt"
+2026/03/01 10:56:34 [notice] 1#1: ModSecurity-nginx v1.0.4 (rules loaded inline/local/remote: 0/845/0)
+2026/03/01 10:56:34 [notice] 1#1: libmodsecurity3 version 3.0.14
+2026/03/01 11:03:57 [warn] 1#1: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/conf/server.crt"
+2026/03/01 11:03:57 [notice] 1#1: ModSecurity-nginx v1.0.4 (rules loaded inline/local/remote: 0/845/0)
+2026/03/01 11:03:57 [notice] 1#1: libmodsecurity3 version 3.0.14
+2026/03/01 11:15:40 [warn] 1#1: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/conf/server.crt"
+2026/03/01 11:15:40 [notice] 1#1: ModSecurity-nginx v1.0.4 (rules loaded inline/local/remote: 0/845/0)
+2026/03/01 11:15:40 [notice] 1#1: libmodsecurity3 version 3.0.14
+2026/03/01 11:18:39 [warn] 1#1: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/conf/server.crt"
+2026/03/01 11:18:39 [notice] 1#1: ModSecurity-nginx v1.0.4 (rules loaded inline/local/remote: 0/845/0)
+2026/03/01 11:18:39 [notice] 1#1: libmodsecurity3 version 3.0.14
+2026/03/01 11:31:36 [warn] 1#1: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/conf/server.crt"
+2026/03/01 11:31:36 [notice] 1#1: ModSecurity-nginx v1.0.4 (rules loaded inline/local/remote: 0/845/0)
+2026/03/01 11:31:36 [notice] 1#1: libmodsecurity3 version 3.0.14
+2026/03/01 11:36:56 [warn] 1#1: "ssl_stapling" ignored, issuer certificate not found for certificate "/etc/nginx/conf/server.crt"
+2026/03/01 11:36:56 [notice] 1#1: ModSecurity-nginx v1.0.4 (rules loaded inline/local/remote: 0/845/0)
+2026/03/01 11:36:56 [notice] 1#1: libmodsecurity3 version 3.0.14
