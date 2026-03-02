@@ -7,7 +7,10 @@ services:
       - MYSQL_DATABASE=wafguard
       - MYSQL_USER=wafguard
       - MYSQL_PASSWORD=wafguard123
+<<<<<<< HEAD
       - TZ=Asia/Singapore
+=======
+>>>>>>> origin/Matin
     volumes:
       - db-data:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -45,8 +48,11 @@ services:
   admin-proxy:
     image: nginx:alpine
     container_name: wafguard-admin-proxy
+<<<<<<< HEAD
     environment:
       - TZ=Asia/Singapore
+=======
+>>>>>>> origin/Matin
     ports:
       - "80:80"
     volumes:
@@ -95,7 +101,10 @@ services:
       - PORT=8080
       - MODSEC_RULE_ENGINE=On
       - BLOCKING_PARANOIA=1
+<<<<<<< HEAD
       - TZ=Asia/Singapore
+=======
+>>>>>>> origin/Matin
     volumes:
       - ./logs/nginx:/var/log/nginx
       - ./nginx/modsecurity-override.conf.template:/etc/nginx/templates/modsecurity.d/modsecurity-override.conf.template
