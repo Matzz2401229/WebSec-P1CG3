@@ -54,6 +54,9 @@ def process_log_entry(log_entry):
             # FIX: ruleId is inside 'details', not at top level
             details = msg.get('details', {})
             rule_id = details.get('ruleId', 'unknown')
+            # If the rule is the redundant anomaly score (949110), skip to the next message
+            if str(rule_id) == '949110':
+                continue
             payload = msg.get('message', 'No message')
             
             query = """
