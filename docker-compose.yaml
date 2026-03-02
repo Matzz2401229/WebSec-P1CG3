@@ -7,6 +7,7 @@ services:
       - MYSQL_DATABASE=wafguard
       - MYSQL_USER=wafguard
       - MYSQL_PASSWORD=wafguard123
+      - TZ=Asia/Singapore
     volumes:
       - db-data:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -44,6 +45,8 @@ services:
   admin-proxy:
     image: nginx:alpine
     container_name: wafguard-admin-proxy
+    environment:
+      - TZ=Asia/Singapore
     ports:
       - "80:80"
     volumes:
@@ -92,9 +95,11 @@ services:
       - PORT=8080
       - MODSEC_RULE_ENGINE=On
       - BLOCKING_PARANOIA=1
+      - TZ=Asia/Singapore
     volumes:
       - ./logs/nginx:/var/log/nginx
       - ./nginx/modsecurity-override.conf.template:/etc/nginx/templates/modsecurity.d/modsecurity-override.conf.template
+      - ./nginx/real-ip.conf:/etc/nginx/conf.d/real-ip.conf:ro
       - ./logs/audit:/var/log/modsecurity/audit
     depends_on:
       - juiceshop

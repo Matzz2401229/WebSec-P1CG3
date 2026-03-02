@@ -19,8 +19,23 @@ def process_log_entry(log_entry):
     """Extract and insert event into database"""
     try:
         transaction = log_entry.get('transaction', {})
-        src_ip = transaction.get('client_ip', 'unknown')
         request_info = transaction.get('request', {})
+
+        headers = request_info.get('headers', {})
+        # Robust check for X-Forwarded-For (handles case sensitivity)
+        forwarded_ip = None
+        for key, value in headers.items():
+            if key.lower() == 'x-forwarded-for':
+                forwarded_ip = value
+                break
+        
+        if forwarded_ip:
+            # Take the first IP in the list
+            src_ip = str(forwarded_ip).split(',')[0].strip()
+        else:
+            # Fallback to the Docker gateway/connection IP
+            src_ip = transaction.get('client_ip', 'unknown')
+
         uri = request_info.get('uri', '/')
         
         # Extract messages/alerts
