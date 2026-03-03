@@ -169,8 +169,8 @@ def clear_events(req: ClearEventsRequest):
             
         # If NO filters are provided at all, wipe the whole table instantly
         if not req.rule_id and not req.filter_date and not req.filter_time and not req.event_ids:
-            cursor.execute("TRUNCATE TABLE events")
-            deleted_count = "all"
+            cursor.execute("DELETE FROM events")
+            deleted_count = cursor.rowcount
         else:
             cursor.execute(query, tuple(params))
             deleted_count = cursor.rowcount
