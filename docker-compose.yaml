@@ -25,6 +25,9 @@ services:
     volumes:
       - ./logs/nginx:/var/log/nginx
       - ./logs/audit:/var/log/modsecurity/audit
+      # Volumes to store dynamic rules
+      - ./nginx/dynamic-rules.conf:/etc/nginx/conf.d/dynamic-rules.conf
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       database:
         condition: service_healthy
@@ -108,6 +111,8 @@ services:
       - ./nginx/modsecurity-override.conf.template:/etc/nginx/templates/modsecurity.d/modsecurity-override.conf.template
       - ./nginx/real-ip.conf:/etc/nginx/conf.d/real-ip.conf:ro
       - ./logs/audit:/var/log/modsecurity/audit
+      # Volumes to store dynamic rules
+      - ./nginx/dynamic-rules.conf:/etc/nginx/conf.d/dynamic-rules.conf
     depends_on:
       - juiceshop
     networks:

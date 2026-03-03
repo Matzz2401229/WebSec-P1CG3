@@ -17,3 +17,6 @@ SecRule REQUEST_URI "@beginsWith /socket.io/" \
     pass,\
     nolog,\
     ctl:ruleEngine=Off"
+
+# For ModSecurity to load dynamic rules
+SecInclude /etc/nginx/conf.d/dynamic-rules.conf

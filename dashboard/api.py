@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import mysql.connector
 import os
+import subprocess
 from datetime import datetime
 from typing import List, Optional
 from pydantic import BaseModel
@@ -180,5 +181,92 @@ def clear_events(req: ClearEventsRequest):
         conn.close()
         
         return {"success": True, "message": f"Deleted {deleted_count} events."}
+
     except Exception as e:
         return {"success": False, "error": str(e)}
+    
+# --- DYNAMIC RULES (UNIVERSAL CONTROL) ---
+
+DYNAMIC_RULES_PATH = "/etc/nginx/conf.d/dynamic-rules.conf"
+
+def write_dynamic_rules(cursor):
+    """Rewrite the dynamic-rules.conf file from current ip_rules table"""
+    cursor.execute("SELECT * FROM ip_rules")
+    rules = cursor.fetchall()
+    
+    lines = ["# Dynamic WAFGuard rules — managed by dashboard\n"]
+    for i, rule in enumerate(rules):
+        rule_id = 30000 + rule['id']
+        if rule['target_type'] == 'ip':
+            if rule['type'] == 'block':
+                lines.append(f'SecRule REMOTE_ADDR "@ipMatch {rule["value"]}" "id:{rule_id},phase:1,deny,status:403,msg:\'Blocked IP\'"\n')
+            elif rule['type'] == 'allow':
+                lines.append(f'SecRule REMOTE_ADDR "@ipMatch {rule["value"]}" "id:{rule_id},phase:1,pass,nolog,ctl:ruleEngine=Off"\n')
+        elif rule['target_type'] == 'rule' and rule['type'] == 'allow':
+            lines.append(f'SecRuleRemoveById {rule["value"]}\n')
+    
+    with open(DYNAMIC_RULES_PATH, 'w') as f:
+        f.writelines(lines)
+
+def reload_modsecurity():
+    """Trigger nginx reload inside the modsecurity container"""
+    subprocess.run(["docker", "exec", "wafguard-modsecurity", "nginx", "-s", "reload"])
+
+@app.get("/api/rules")
+def get_rules():
+    """Get all dynamic IP/rule entries"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM ip_rules ORDER BY created_at DESC")
+        rules = cursor.fetchall()
+        for rule in rules:
+            if 'created_at' in rule and rule['created_at']:
+                rule['created_at'] = rule['created_at'].isoformat()
+        cursor.close()
+        conn.close()
+        return {"rules": rules}
+    except Exception as e:
+        return {"error": str(e), "rules": []}
+
+class IpRuleRequest(BaseModel):
+    type: str        # 'allow' or 'block'
+    target_type: str # 'ip' or 'rule'
+    value: str       # IP address or rule ID
+    reason: Optional[str] = None
+
+@app.post("/api/rules")
+def add_rule(req: IpRuleRequest):
+    """Add a new dynamic rule"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            INSERT INTO ip_rules (type, target_type, value, reason)
+            VALUES (%s, %s, %s, %s)
+        """, (req.type, req.target_type, req.value, req.reason))
+        conn.commit()
+        write_dynamic_rules(cursor)
+        cursor.close()
+        conn.close()
+        reload_modsecurity()
+        return {"success": True, "message": f"Rule added for {req.value}"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@app.delete("/api/rules/{rule_id}")
+def delete_rule(rule_id: int):
+    """Delete a dynamic rule"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("DELETE FROM ip_rules WHERE id = %s", (rule_id,))
+        conn.commit()
+        write_dynamic_rules(cursor)
+        cursor.close()
+        conn.close()
+        reload_modsecurity()
+        return {"success": True, "message": f"Rule {rule_id} deleted"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+

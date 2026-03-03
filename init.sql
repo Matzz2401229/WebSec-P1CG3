@@ -30,3 +30,13 @@ CREATE TABLE incident_events (
     FOREIGN KEY(incident_id) REFERENCES incidents(id),
     FOREIGN KEY(event_id) REFERENCES events(id)
 );
+
+-- TABLE FOR DYNAMIC RULES (WHITELIST/BLACKLISTS)
+CREATE TABLE ip_rules (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    type VARCHAR(10) NOT NULL,        -- 'allow' or 'block'
+    target_type VARCHAR(10) NOT NULL, -- 'ip' or 'rule'
+    value VARCHAR(100) NOT NULL,      -- the IP address or rule ID
+    reason VARCHAR(255),              -- admin's note
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

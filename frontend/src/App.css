@@ -360,3 +360,11 @@ body {
   background: #f8c09d;
   cursor: not-allowed;
 }
+
+/* --- UNIVERSAL CONTROL STYLES --- */
+.control-view select {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+}

@@ -12,6 +12,12 @@ function App() {
 
   const [expandedRow, setExpandedRow] = useState(null);
 
+  const [ipRules, setIpRules] = useState([]);
+  const [newRuleType, setNewRuleType] = useState('block');
+  const [newRuleTarget, setNewRuleTarget] = useState('ip');
+  const [newRuleValue, setNewRuleValue] = useState('');
+  const [newRuleReason, setNewRuleReason] = useState('');
+
   // Tab State & Independent Filter States
   const [activeTab, setActiveTab] = useState('events'); 
   const [deleteRuleId, setDeleteRuleId] = useState('');
@@ -47,12 +53,26 @@ function App() {
     }
   };
 
+  // Function to fetch rules from dynamic rules 
+  const fetchRules = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/rules`);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      setIpRules(data.rules || []);
+    } catch (error) {
+      console.error('Error fetching rules:', error);
+    }
+  };
+
   useEffect(() => {
     fetchEvents();
     fetchStats();
+    fetchRules();
     pollingRef.current = setInterval(() => {
       fetchEvents();
       fetchStats();
+      fetchRules();
     }, 3000);
     return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
   }, []);
@@ -160,6 +180,38 @@ function App() {
       console.error('Error deleting logs:', error);
     }
   };
+  
+  // HANDLERS FOR DYNAMIC RULES
+  const handleAddRule = async () => {
+      if (!newRuleValue) return;
+      try {
+        await fetch(`${API_BASE}/rules`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: newRuleType,
+            target_type: newRuleTarget,
+            value: newRuleValue,
+            reason: newRuleReason
+          })
+        });
+        setNewRuleValue('');
+        setNewRuleReason('');
+        fetchRules();
+      } catch (error) {
+        console.error('Error adding rule:', error);
+      }
+    };
+
+    const handleDeleteRule = async (ruleId) => {
+      if (!window.confirm("Remove this rule?")) return;
+      try {
+        await fetch(`${API_BASE}/rules/${ruleId}`, { method: 'DELETE' });
+        fetchRules();
+      } catch (error) {
+        console.error('Error deleting rule:', error);
+      }
+    };
 
   const formatTime = (timestamp) => new Date(timestamp).toLocaleString();
 
@@ -206,6 +258,13 @@ function App() {
             onClick={() => setActiveTab('manager')}
           >
             Log Manager
+          </h2>
+          <span className="tab-divider">|</span>
+          <h2
+            className={`tab-title ${activeTab === 'control' ? 'active-tab' : 'inactive-tab'}`}
+            onClick={() => setActiveTab('control')}
+          >
+            Universal Control
           </h2>
         </div>
 
@@ -379,6 +438,92 @@ function App() {
                         No logs match these filters.
                       </td>
                     </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* --- VIEW 3: UNIVERSAL CONTROL --- */}
+        {activeTab === 'control' && (
+          <div className="control-view">
+            {/* Add rule form */}
+            <div className="log-manager-panel" style={{borderLeftColor: '#667eea'}}>
+              <h3>Add IP / Rule Control</h3>
+              <div className="filter-group">
+                {/* Select block or allow */}
+                <select value={newRuleType} onChange={(e) => setNewRuleType(e.target.value)}>
+                  <option value="block">Block</option>
+                  <option value="allow">Allow</option>
+                </select>
+                {/* Select IP or Rule ID target */}
+                <select value={newRuleTarget} onChange={(e) => setNewRuleTarget(e.target.value)}>
+                  <option value="ip">IP Address</option>
+                  <option value="rule">Rule ID</option>
+                </select>
+                {/* Value input — placeholder changes based on target type */}
+                <input
+                  type="text"
+                  placeholder={newRuleTarget === 'ip' ? 'e.g. 192.168.1.50' : 'e.g. 941100'}
+                  value={newRuleValue}
+                  onChange={(e) => setNewRuleValue(e.target.value)}
+                />
+                {/* Optional reason for audit trail */}
+                <input
+                  type="text"
+                  placeholder="Reason (optional)"
+                  value={newRuleReason}
+                  onChange={(e) => setNewRuleReason(e.target.value)}
+                />
+                <button className="btn btn-allow" onClick={handleAddRule}>Add Rule</button>
+              </div>
+              <small className="help-text">
+                Block/Allow an IP address, or Allow a Rule ID to suppress false positives. Changes take effect immediately via ModSecurity reload.
+              </small>
+            </div>
+
+            {/* Active rules table */}
+            <div className="table-container">
+              <table className="events-table">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Target</th>
+                    <th>Value</th>
+                    <th>Reason</th>
+                    <th>Added</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ipRules.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} style={{textAlign: 'center', padding: '20px', color: '#666'}}>
+                        No rules added yet. Use the form above to block or allow an IP or Rule ID.
+                      </td>
+                    </tr>
+                  ) : (
+                    ipRules.map((rule) => (
+                      <tr key={rule.id}>
+                        {/* Color-coded type badge: red for block, green for allow */}
+                        <td>
+                          <span className={`badge ${rule.type === 'block' ? 'badge-red' : 'badge-gray'}`}>
+                            {rule.type.toUpperCase()}
+                          </span>
+                        </td>
+                        <td>{rule.target_type.toUpperCase()}</td>
+                        <td className="ip-cell">{rule.value}</td>
+                        <td>{rule.reason || '—'}</td>
+                        <td>{new Date(rule.created_at).toLocaleString()}</td>
+                        {/* Remove button triggers DELETE endpoint and reloads ModSecurity */}
+                        <td>
+                          <button className="btn btn-delete-single" onClick={() => handleDeleteRule(rule.id)}>
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))
                   )}
                 </tbody>
               </table>
