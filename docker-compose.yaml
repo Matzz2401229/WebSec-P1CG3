@@ -1,33 +1,4 @@
-version: '3.8'
-
 services:
-  # OWASP Juice Shop
-  juiceshop:
-    image: bkimminich/juice-shop
-    container_name: wafguard-juiceshop
-    ports:
-      - "3000:3000"
-    networks:
-      - wafguard-network
-
-  # ModSecurity WAF with OWASP CRS
-  modsecurity:
-    image: owasp/modsecurity-crs:nginx-alpine
-    container_name: wafguard-modsecurity
-    ports:
-      - "80:8080"
-    environment:
-      - BACKEND=http://juiceshop:3000
-      - PORT=8080
-      - PARANOIA=1
-      - ANOMALY_INBOUND=5
-      - ANOMALY_OUTBOUND=4
-    depends_on:
-      - juiceshop
-    networks:
-      - wafguard-network
-
-  # MySQL Database
   database:
     image: mysql:8.0
     container_name: wafguard-database
@@ -36,13 +7,111 @@ services:
       - MYSQL_DATABASE=wafguard
       - MYSQL_USER=wafguard
       - MYSQL_PASSWORD=wafguard123
-    ports:
-      - "3306:3306"
+      - TZ=Asia/Singapore
     volumes:
       - db-data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-hlocalhost", "-uwafguard", "-pwafguard123"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     networks:
       - wafguard-network
-    command: --default-authentication-plugin=mysql_native_password
+
+  dashboard:
+    build: ./dashboard
+    container_name: wafguard-dashboard
+    volumes:
+      - ./logs/nginx:/var/log/nginx
+      - ./logs/audit:/var/log/modsecurity/audit
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      - DB_HOST=database
+      - DB_USER=wafguard
+      - DB_PASSWORD=wafguard123
+      - DB_NAME=wafguard
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://dashboard:3000/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    networks:
+      - wafguard-network
+
+  admin-proxy:
+    image: nginx:alpine
+    container_name: wafguard-admin-proxy
+    #added
+    restart: always
+    environment:
+      - TZ=Asia/Singapore
+    ports:
+      - "80:80"
+    #added
+    links:
+      - modsecurity
+      - dashboard
+      - frontend
+    volumes:
+      - ./nginx/admin-proxy.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/.htpasswd:/etc/nginx/.htpasswd:ro
+    depends_on:
+      dashboard:
+        condition: service_started
+      modsecurity:
+        condition: service_started
+      frontend:
+        condition: service_started
+    networks:
+      - wafguard-network
+
+  frontend:
+    image: node:18-alpine
+    container_name: wafguard-frontend
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: sh -c "npm install && npm start"
+    environment:
+      - PUBLIC_URL=/frontend/
+      - REACT_APP_PUBLIC_URL=/frontend/
+      - HOST=0.0.0.0
+      - PORT=3000
+      - WATCHPACK_POLLING=true
+    stdin_open: true
+    tty: true
+    networks:
+      - wafguard-network
+
+  juiceshop:
+    image: bkimminich/juice-shop
+    container_name: wafguard-juiceshop
+    networks:
+      - wafguard-network
+
+  modsecurity:
+    image: owasp/modsecurity-crs:nginx-alpine
+    container_name: wafguard-modsecurity
+    environment:
+      - BACKEND=http://juiceshop:3000
+      - PORT=8080
+      - MODSEC_RULE_ENGINE=On
+      - BLOCKING_PARANOIA=1
+      - TZ=Asia/Singapore
+    volumes:
+      - ./logs/nginx:/var/log/nginx
+      - ./nginx/modsecurity-override.conf.template:/etc/nginx/templates/modsecurity.d/modsecurity-override.conf.template
+      - ./nginx/real-ip.conf:/etc/nginx/conf.d/real-ip.conf:ro
+      - ./logs/audit:/var/log/modsecurity/audit
+    depends_on:
+      - juiceshop
+    networks:
+      - wafguard-network
 
 networks:
   wafguard-network:
