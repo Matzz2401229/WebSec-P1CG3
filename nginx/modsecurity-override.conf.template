@@ -19,4 +19,5 @@ SecRule REQUEST_URI "@beginsWith /socket.io/" \
     ctl:ruleEngine=Off"
 
 # For ModSecurity to load dynamic rules (path must match modsecurity volume mount, not nginx conf.d)
-SecInclude /etc/modsecurity.d/dynamic-rules.conf
+# Note: ModSecurity v3 uses "Include" not "SecInclude" (SecInclude v2 only)
+Include /etc/modsecurity.d/dynamic-rules.conf
