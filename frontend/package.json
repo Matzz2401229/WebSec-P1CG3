@@ -4,9 +4,17 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
+<<<<<<< HEAD
+    "axios": "^1.6.0",
+    "chart.js": "^4.5.1",
+    "react": "^18.2.0",
+    "react-chartjs-2": "^5.3.1",
+    "react-dom": "^18.2.0"
+=======
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "axios": "^1.6.0"
+>>>>>>> main
   },
   "scripts": {
     "start": "react-scripts start",
@@ -16,7 +24,17 @@
     "react-scripts": "5.0.1"
   },
   "browserslist": {
+<<<<<<< HEAD
+    "production": [
+      ">0.2%",
+      "not dead"
+    ],
+    "development": [
+      "last 1 chrome version"
+    ]
+=======
     "production": [">0.2%", "not dead"],
     "development": ["last 1 chrome version"]
+>>>>>>> main
   }
 }
