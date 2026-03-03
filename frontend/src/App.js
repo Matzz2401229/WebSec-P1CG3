@@ -18,7 +18,7 @@ function App() {
   const [deleteDate, setDeleteDate] = useState('');
   const [deleteTime, setDeleteTime] = useState('');
 
-  // NEW: Checkbox state for multiple deletions
+  // Checkbox state for multiple deletions
   const [selectedLogs, setSelectedLogs] = useState([]);
 
   const fetchEvents = async () => {
@@ -86,6 +86,9 @@ function App() {
     return match;
   });
 
+  // Extract unique Rule IDs from the current events for the dropdown
+  const uniqueRuleIds = [...new Set(events.map(event => event.rule_id))].sort();
+
   // Checkbox Handlers
   const toggleSelection = (id) => {
     setSelectedLogs(prev => 
@@ -117,7 +120,7 @@ function App() {
       setDeleteRuleId('');
       setDeleteDate('');
       setDeleteTime('');
-      setSelectedLogs([]); // clear selections
+      setSelectedLogs([]); 
       fetchEvents();
       fetchStats();
     } catch (error) {
@@ -131,7 +134,7 @@ function App() {
       await fetch(`${API_BASE}/events/clear`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ event_ids: [eventId] }) // Passed as array to API
+        body: JSON.stringify({ event_ids: [eventId] }) 
       });
       setSelectedLogs(prev => prev.filter(id => id !== eventId));
       fetchEvents();
@@ -150,7 +153,7 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ event_ids: selectedLogs })
       });
-      setSelectedLogs([]); // reset checkboxes
+      setSelectedLogs([]); 
       fetchEvents();
       fetchStats();
     } catch (error) {
@@ -262,13 +265,22 @@ function App() {
             <div className="log-manager-panel">
               <h3>Bulk Delete Logs</h3>
               <div className="filter-group">
-                <input
-                  type="text"
-                  placeholder="Filter Rule ID"
+                
+                {/* --- NEW DYNAMIC DROPDOWN --- */}
+                <select
                   value={deleteRuleId}
                   onChange={(e) => setDeleteRuleId(e.target.value)}
                   className="standard-input"
-                />
+                  style={{cursor: 'pointer'}}
+                >
+                  <option value="">All Rule IDs</option>
+                  {uniqueRuleIds.map(ruleId => (
+                    <option key={ruleId} value={ruleId}>
+                      Rule {ruleId}
+                    </option>
+                  ))}
+                </select>
+                {/* ---------------------------- */}
                 
                 <div className="labeled-input">
                   <label>Date:</label>
