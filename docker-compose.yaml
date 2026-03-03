@@ -45,6 +45,8 @@ services:
   admin-proxy:
     image: nginx:alpine
     container_name: wafguard-admin-proxy
+    #added
+    restart: always
     environment:
       - TZ=Asia/Singapore
     ports:
