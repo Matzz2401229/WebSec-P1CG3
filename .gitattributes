@@ -1,2 +1,0 @@
-# Always use LF for shell scripts (prevents CRLF breaking Docker on Windows)
-*.sh text eol=lf
