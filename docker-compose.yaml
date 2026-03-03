@@ -106,8 +106,8 @@ services:
       - ./nginx/modsecurity-override.conf.template:/etc/nginx/templates/modsecurity.d/modsecurity-override.conf.template
       - ./nginx/real-ip.conf:/etc/nginx/conf.d/real-ip.conf:ro
       - ./logs/audit:/var/log/modsecurity/audit
-      # Volumes to store dynamic rules
-      - ./nginx/dynamic-rules.conf:/etc/nginx/conf.d/dynamic-rules.conf
+      # Mount dynamic rules to modsecurity path (NOT /etc/nginx/conf.d to avoid nginx parsing ModSec directives)
+      - ./nginx/dynamic-rules.conf:/etc/modsecurity.d/dynamic-rules.conf
     depends_on:
       - juiceshop
     networks:
