@@ -2,10 +2,6 @@
 logs/nginx/*.log
 logs/nginx/*.json
 
-# But keep the folder structure
-# Ignore log files
-logs/nginx/*.log
-logs/nginx/*.json
 
 # But keep the folder structure
 !logs/nginx/.gitkeep
