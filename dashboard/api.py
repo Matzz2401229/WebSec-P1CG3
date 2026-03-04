@@ -128,7 +128,14 @@ def update_event_action(event_id: int, action: str):
         if event and action in ('allow', 'block'):
             src_ip = event.get('src_ip')
             rule_id = str(event.get('rule_id')) if event.get('rule_id') else None
-            # Avoid duplicate ip_rules entries
+            opposite = 'block' if action == 'allow' else 'allow'
+            # Remove any conflicting opposite-type rule for the same IP + Rule ID
+            cursor.execute(
+                "DELETE FROM ip_rules WHERE type=%s AND ip_address=%s AND rule_id_ref=%s",
+                (opposite, src_ip, rule_id)
+            )
+            conn.commit()
+            # Insert new rule only if not already present
             cursor.execute(
                 "SELECT id FROM ip_rules WHERE type=%s AND ip_address=%s AND rule_id_ref=%s",
                 (action, src_ip, rule_id)
@@ -139,11 +146,11 @@ def update_event_action(event_id: int, action: str):
                     (action, src_ip, rule_id, f'Auto-created from event #{event_id}')
                 )
                 conn.commit()
-                write_dynamic_rules(cursor)
-                cursor.close()
-                conn.close()
-                reload_modsecurity()
-                return {"success": True, "message": f"Event {event_id} set to {action} and rule applied"}
+            write_dynamic_rules(cursor)
+            cursor.close()
+            conn.close()
+            reload_modsecurity()
+            return {"success": True, "message": f"Event {event_id} set to {action} and rule applied"}
 
         cursor.close()
         conn.close()
