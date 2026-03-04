@@ -14,9 +14,9 @@ function App() {
 
   const [ipRules, setIpRules] = useState([]);
   const [newRuleType, setNewRuleType] = useState('block');
-  const [newRuleTarget, setNewRuleTarget] = useState('ip');
-  const [newRuleValue, setNewRuleValue] = useState('');
-  const [newRuleReason, setNewRuleReason] = useState('');
+  const [newRuleIP, setNewRuleIP] = useState('');           // IP address (optional)
+  const [newRuleRuleId, setNewRuleRuleId] = useState('');   // Rule ID (optional)
+  const [newRuleReason, setNewRuleReason] = useState('');   // Reason / audit note
 
   // Tab State & Independent Filter States
   const [activeTab, setActiveTab] = useState('events'); 
@@ -183,19 +183,25 @@ function App() {
   
   // HANDLERS FOR DYNAMIC RULES
   const handleAddRule = async () => {
-      if (!newRuleValue) return;
+      // At least one of IP or Rule ID must be filled
+      if (!newRuleIP && !newRuleRuleId) {
+        alert('Please provide at least an IP Address or a Rule ID.');
+        return;
+      }
       try {
         await fetch(`${API_BASE}/rules`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             type: newRuleType,
-            target_type: newRuleTarget,
-            value: newRuleValue,
-            reason: newRuleReason
+            ip_address: newRuleIP || null,
+            rule_id_ref: newRuleRuleId || null,
+            reason: newRuleReason || null
           })
         });
-        setNewRuleValue('');
+        // Reset form fields after submission
+        setNewRuleIP('');
+        setNewRuleRuleId('');
         setNewRuleReason('');
         fetchRules();
       } catch (error) {
@@ -457,17 +463,19 @@ function App() {
                   <option value="block">Block</option>
                   <option value="allow">Allow</option>
                 </select>
-                {/* Select IP or Rule ID target */}
-                <select value={newRuleTarget} onChange={(e) => setNewRuleTarget(e.target.value)}>
-                  <option value="ip">IP Address</option>
-                  <option value="rule">Rule ID</option>
-                </select>
-                {/* Value input — placeholder changes based on target type */}
+                {/* IP Address — optional, leave blank to apply to all IPs */}
                 <input
                   type="text"
-                  placeholder={newRuleTarget === 'ip' ? 'e.g. 192.168.1.50' : 'e.g. 941100'}
-                  value={newRuleValue}
-                  onChange={(e) => setNewRuleValue(e.target.value)}
+                  placeholder="IP Address (optional)"
+                  value={newRuleIP}
+                  onChange={(e) => setNewRuleIP(e.target.value)}
+                />
+                {/* Rule ID — optional, leave blank to apply to all rules */}
+                <input
+                  type="text"
+                  placeholder="Rule ID (optional)"
+                  value={newRuleRuleId}
+                  onChange={(e) => setNewRuleRuleId(e.target.value)}
                 />
                 {/* Optional reason for audit trail */}
                 <input
@@ -479,7 +487,8 @@ function App() {
                 <button className="btn btn-allow" onClick={handleAddRule}>Add Rule</button>
               </div>
               <small className="help-text">
-                Block/Allow an IP address, or Allow a Rule ID to suppress false positives. Changes take effect immediately via ModSecurity reload.
+                Fill IP only = full IP block/whitelist. Fill Rule ID only = global rule block/suppress.
+                Fill both = rule scoped to that IP. At least one field required.
               </small>
             </div>
 
@@ -489,8 +498,8 @@ function App() {
                 <thead>
                   <tr>
                     <th>Type</th>
-                    <th>Target</th>
-                    <th>Value</th>
+                    <th>IP Address</th>
+                    <th>Rule ID</th>
                     <th>Reason</th>
                     <th>Added</th>
                     <th>Action</th>
@@ -506,14 +515,15 @@ function App() {
                   ) : (
                     ipRules.map((rule) => (
                       <tr key={rule.id}>
-                        {/* Color-coded type badge: red for block, green for allow */}
+                        {/* Color-coded type badge: red for block, gray/green for allow */}
                         <td>
                           <span className={`badge ${rule.type === 'block' ? 'badge-red' : 'badge-gray'}`}>
                             {rule.type.toUpperCase()}
                           </span>
                         </td>
-                        <td>{rule.target_type.toUpperCase()}</td>
-                        <td className="ip-cell">{rule.value}</td>
+                        {/* Show IP and Rule ID separately — "Any" if null */}
+                        <td className="ip-cell">{rule.ip_address || <em style={{color:'#999'}}>Any</em>}</td>
+                        <td>{rule.rule_id_ref || <em style={{color:'#999'}}>Any</em>}</td>
                         <td>{rule.reason || '—'}</td>
                         <td>{new Date(rule.created_at).toLocaleString()}</td>
                         {/* Remove button triggers DELETE endpoint and reloads ModSecurity */}

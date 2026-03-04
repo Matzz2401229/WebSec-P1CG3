@@ -32,11 +32,20 @@ CREATE TABLE incident_events (
 );
 
 -- TABLE FOR DYNAMIC RULES (WHITELIST/BLACKLISTS)
+-- ip_address and rule_id_ref are both nullable to support flexible combinations:
+--   block + ip only       = full IP blacklist (block all requests from this IP)
+--   block + ip + rule     = block IP, tagged/annotated as caused by specific rule
+--   block + rule only     = enforce rule for all IPs (prevents global suppression via dashboard)
+--   allow + ip only       = full IP whitelist (bypass all WAF rules for this IP)
+--   allow + ip + rule     = suppress rule for this IP only (targeted false positive fix)
+--   allow + rule only     = suppress rule globally for all IPs
 CREATE TABLE ip_rules (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    type VARCHAR(10) NOT NULL,        -- 'allow' or 'block'
-    target_type VARCHAR(10) NOT NULL, -- 'ip' or 'rule'
-    value VARCHAR(100) NOT NULL,      -- the IP address or rule ID
-    reason VARCHAR(255),              -- admin's note
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    type VARCHAR(10) NOT NULL,            -- 'allow' or 'block'
+    ip_address VARCHAR(100) DEFAULT NULL, -- IP address (null = applies to all IPs)
+    rule_id_ref VARCHAR(50) DEFAULT NULL, -- Rule ID reference (null = applies to all rules)
+    reason VARCHAR(255),                  -- admin's note / audit trail
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_type (type),
+    INDEX idx_ip (ip_address)
 );

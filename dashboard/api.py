@@ -190,21 +190,77 @@ def clear_events(req: ClearEventsRequest):
 DYNAMIC_RULES_PATH = "/etc/nginx/conf.d/dynamic-rules.conf"
 
 def write_dynamic_rules(cursor):
-    """Rewrite the dynamic-rules.conf file from current ip_rules table"""
-    cursor.execute("SELECT * FROM ip_rules")
+    """
+    Rewrite dynamic-rules.conf from the current ip_rules table.
+
+    Rule ordering:
+      1. ALLOW rules always come first so explicit whitelists take precedence.
+      2. BLOCK rules come after.
+
+    Combinations supported:
+      allow + ip only       → ctl:ruleEngine=Off for that IP (full whitelist)
+      allow + ip + rule     → ctl:ruleRemoveById for that IP only (targeted false positive)
+      allow + rule only     → SecRuleRemoveById globally (skipped if rule is enforced)
+      block + ip            → deny for that IP (rule_id_ref is metadata/annotation only)
+      block + rule only     → marks rule as enforced; prevents global suppression
+    """
+    cursor.execute("SELECT * FROM ip_rules ORDER BY created_at ASC")
     rules = cursor.fetchall()
-    
-    lines = ["# Dynamic WAFGuard rules — managed by dashboard\n"]
-    for i, rule in enumerate(rules):
-        rule_id = 30000 + rule['id']
-        if rule['target_type'] == 'ip':
-            if rule['type'] == 'block':
-                lines.append(f'SecRule REMOTE_ADDR "@ipMatch {rule["value"]}" "id:{rule_id},phase:1,deny,status:403,msg:\'Blocked IP\'"\n')
-            elif rule['type'] == 'allow':
-                lines.append(f'SecRule REMOTE_ADDR "@ipMatch {rule["value"]}" "id:{rule_id},phase:1,pass,nolog,ctl:ruleEngine=Off"\n')
-        elif rule['target_type'] == 'rule' and rule['type'] == 'allow':
-            lines.append(f'SecRuleRemoveById {rule["value"]}\n')
-    
+
+    allow_rules = [r for r in rules if r['type'] == 'allow']
+    block_rules  = [r for r in rules if r['type'] == 'block']
+
+    # Collect rules explicitly marked as enforced (block + rule only, no IP)
+    # These prevent a corresponding allow/suppress entry from writing SecRuleRemoveById
+    enforced_rules = set(
+        str(r['rule_id_ref']) for r in block_rules
+        if r['ip_address'] is None and r['rule_id_ref'] is not None
+    )
+
+    lines = ["# Dynamic WAFGuard rules — managed by dashboard\n\n"]
+    rule_id_counter = 30001
+
+    # --- ALLOW rules first ---
+    for rule in allow_rules:
+        ip  = rule.get('ip_address')
+        rid = str(rule.get('rule_id_ref')) if rule.get('rule_id_ref') else None
+
+        if ip and rid:
+            # Suppress specific rule for this IP only (targeted false positive fix)
+            lines.append(
+                f'SecRule REMOTE_ADDR "@ipMatch {ip}" '
+                f'"id:{rule_id_counter},phase:1,pass,nolog,ctl:ruleRemoveById={rid}"\n'
+            )
+            rule_id_counter += 1
+        elif ip and not rid:
+            # Full IP whitelist — bypass all WAF rules for this IP
+            lines.append(
+                f'SecRule REMOTE_ADDR "@ipMatch {ip}" '
+                f'"id:{rule_id_counter},phase:1,pass,nolog,ctl:ruleEngine=Off"\n'
+            )
+            rule_id_counter += 1
+        elif not ip and rid:
+            # Global rule suppression — skip if this rule is marked as enforced
+            if rid not in enforced_rules:
+                lines.append(f'SecRuleRemoveById {rid}\n')
+
+    # --- BLOCK rules after ---
+    for rule in block_rules:
+        ip  = rule.get('ip_address')
+        rid = str(rule.get('rule_id_ref')) if rule.get('rule_id_ref') else None
+
+        if ip:
+            # Block this IP (rule_id_ref is annotation only, not used in directive)
+            lines.append(
+                f'SecRule REMOTE_ADDR "@ipMatch {ip}" '
+                f'"id:{rule_id_counter},phase:1,deny,status:403,msg:\'WAFGuard Blocked IP\'"\n'
+            )
+            rule_id_counter += 1
+        elif not ip and rid:
+            # Enforce rule for all IPs — no directive needed (ModSec blocks by default)
+            # Presence in enforced_rules set prevents global suppression above
+            lines.append(f'# Rule {rid} enforced for all IPs — global suppression blocked\n')
+
     with open(DYNAMIC_RULES_PATH, 'w') as f:
         f.writelines(lines)
 
@@ -230,27 +286,32 @@ def get_rules():
         return {"error": str(e), "rules": []}
 
 class IpRuleRequest(BaseModel):
-    type: str        # 'allow' or 'block'
-    target_type: str # 'ip' or 'rule'
-    value: str       # IP address or rule ID
+    type: str                      # 'allow' or 'block'
+    ip_address: Optional[str] = None  # IP address (null = applies to all IPs)
+    rule_id_ref: Optional[str] = None # Rule ID reference (null = applies to all rules)
     reason: Optional[str] = None
 
 @app.post("/api/rules")
 def add_rule(req: IpRuleRequest):
-    """Add a new dynamic rule"""
+    """Add a new dynamic rule. At least one of ip_address or rule_id_ref must be provided."""
     try:
+        # Validate that at least one target is specified
+        if not req.ip_address and not req.rule_id_ref:
+            return {"success": False, "error": "At least one of IP Address or Rule ID must be provided."}
+
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         cursor.execute("""
-            INSERT INTO ip_rules (type, target_type, value, reason)
+            INSERT INTO ip_rules (type, ip_address, rule_id_ref, reason)
             VALUES (%s, %s, %s, %s)
-        """, (req.type, req.target_type, req.value, req.reason))
+        """, (req.type, req.ip_address or None, req.rule_id_ref or None, req.reason))
         conn.commit()
         write_dynamic_rules(cursor)
         cursor.close()
         conn.close()
         reload_modsecurity()
-        return {"success": True, "message": f"Rule added for {req.value}"}
+        label = req.ip_address or f"Rule {req.rule_id_ref}"
+        return {"success": True, "message": f"Rule added for {label}"}
     except Exception as e:
         return {"success": False, "error": str(e)}
 
