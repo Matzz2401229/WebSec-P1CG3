@@ -201,7 +201,8 @@ def write_dynamic_rules(cursor):
       allow + ip only       → ctl:ruleEngine=Off for that IP (full whitelist)
       allow + ip + rule     → ctl:ruleRemoveById for that IP only (targeted false positive)
       allow + rule only     → SecRuleRemoveById globally (skipped if rule is enforced)
-      block + ip            → deny for that IP (rule_id_ref is metadata/annotation only)
+      block + ip only       → deny ALL traffic from this IP (full blacklist)
+      block + ip + rule     → comment only; ModSec default blocking applies for that rule
       block + rule only     → marks rule as enforced; prevents global suppression
     """
     cursor.execute("SELECT * FROM ip_rules ORDER BY created_at ASC")
@@ -249,13 +250,18 @@ def write_dynamic_rules(cursor):
         ip  = rule.get('ip_address')
         rid = str(rule.get('rule_id_ref')) if rule.get('rule_id_ref') else None
 
-        if ip:
-            # Block this IP (rule_id_ref is annotation only, not used in directive)
+        if ip and not rid:
+            # Full IP blacklist — deny ALL traffic from this IP regardless of rule
             lines.append(
                 f'SecRule REMOTE_ADDR "@ipMatch {ip}" '
                 f'"id:{rule_id_counter},phase:1,deny,status:403,msg:\'WAFGuard Blocked IP\'"\n'
             )
             rule_id_counter += 1
+        elif ip and rid:
+            # Scoped block — this IP is flagged for a specific rule only
+            # ModSecurity's default blocking already handles this (rules block on match)
+            # No deny directive needed — adding one would incorrectly block ALL traffic from this IP
+            lines.append(f'# IP {ip} flagged for rule {rid} — ModSecurity default blocking applies\n')
         elif not ip and rid:
             # Enforce rule for all IPs — no directive needed (ModSec blocks by default)
             # Presence in enforced_rules set prevents global suppression above
