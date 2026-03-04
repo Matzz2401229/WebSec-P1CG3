@@ -349,12 +349,40 @@ def add_rule(req: IpRuleRequest):
 
 @app.delete("/api/rules/{rule_id}")
 def delete_rule(rule_id: int):
-    """Delete a dynamic rule"""
+    """Delete a dynamic rule and revert affected events back to 'block' (WAF default)"""
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
+
+        # Fetch rule details before deleting so we know what to revert
+        cursor.execute("SELECT type, ip_address, rule_id_ref FROM ip_rules WHERE id = %s", (rule_id,))
+        rule = cursor.fetchone()
+
         cursor.execute("DELETE FROM ip_rules WHERE id = %s", (rule_id,))
         conn.commit()
+
+        # Revert matching events to 'block' (WAF default when no control rule exists)
+        if rule:
+            ip  = rule.get('ip_address')
+            rid = rule.get('rule_id_ref')
+            rtype = rule.get('type')
+            if ip and rid:
+                cursor.execute(
+                    "UPDATE events SET action='block' WHERE src_ip=%s AND rule_id=%s AND action=%s",
+                    (ip, rid, rtype)
+                )
+            elif ip:
+                cursor.execute(
+                    "UPDATE events SET action='block' WHERE src_ip=%s AND action=%s",
+                    (ip, rtype)
+                )
+            elif rid:
+                cursor.execute(
+                    "UPDATE events SET action='block' WHERE rule_id=%s AND action=%s",
+                    (rid, rtype)
+                )
+            conn.commit()
+
         write_dynamic_rules(cursor)
         cursor.close()
         conn.close()
