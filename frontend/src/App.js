@@ -29,7 +29,7 @@ function App() {
 
   const fetchEvents = async () => {
     try {
-      const response = await fetch(`${API_BASE}/events?limit=50`);
+      const response = await fetch(`${API_BASE}/events?limit=1000`);
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
       setEvents(data.events || []);
@@ -81,6 +81,7 @@ function App() {
     try {
       await fetch(`${API_BASE}/events/${eventId}/action?action=${action}`, { method: 'POST' });
       fetchEvents();
+      fetchRules(); // sync Universal Control tab after action creates an ip_rule
     } catch (error) {
       console.error('Error updating action:', error);
     }
@@ -271,6 +272,9 @@ function App() {
             onClick={() => setActiveTab('control')}
           >
             Universal Control
+            {ipRules.length > 0 && (
+              <span className="tab-badge">{ipRules.length}</span>
+            )}
           </h2>
         </div>
 

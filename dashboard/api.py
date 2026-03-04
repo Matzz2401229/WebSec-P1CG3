@@ -33,7 +33,7 @@ def read_root():
     return {"status": "WAFGuard API is running"}
 
 @app.get("/api/events")
-def get_events(limit: int = 50, offset: int = 0):
+def get_events(limit: int = 1000, offset: int = 0):
     """Get recent security events"""
     try:
         conn = get_db_connection()
@@ -113,21 +113,40 @@ def get_stats():
 
 @app.post("/api/events/{event_id}/action")
 def update_event_action(event_id: int, action: str):
-    """Update event action (allow/block/challenge)"""
+    """Update event action (allow/block) and create a corresponding ip_rule"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute("""
-            UPDATE events 
-            SET action = %s 
-            WHERE id = %s
-        """, (action, event_id))
-        
+        cursor = conn.cursor(dictionary=True)
+
+        # Fetch src_ip and rule_id for ip_rules creation
+        cursor.execute("SELECT src_ip, rule_id FROM events WHERE id = %s", (event_id,))
+        event = cursor.fetchone()
+
+        cursor.execute("UPDATE events SET action = %s WHERE id = %s", (action, event_id))
         conn.commit()
+
+        if event and action in ('allow', 'block'):
+            src_ip = event.get('src_ip')
+            rule_id = str(event.get('rule_id')) if event.get('rule_id') else None
+            # Avoid duplicate ip_rules entries
+            cursor.execute(
+                "SELECT id FROM ip_rules WHERE type=%s AND ip_address=%s AND rule_id_ref=%s",
+                (action, src_ip, rule_id)
+            )
+            if not cursor.fetchone():
+                cursor.execute(
+                    "INSERT INTO ip_rules (type, ip_address, rule_id_ref, reason) VALUES (%s, %s, %s, %s)",
+                    (action, src_ip, rule_id, f'Auto-created from event #{event_id}')
+                )
+                conn.commit()
+                write_dynamic_rules(cursor)
+                cursor.close()
+                conn.close()
+                reload_modsecurity()
+                return {"success": True, "message": f"Event {event_id} set to {action} and rule applied"}
+
         cursor.close()
         conn.close()
-        
         return {"success": True, "message": f"Event {event_id} updated to {action}"}
     except Exception as e:
         return {"success": False, "error": str(e)}
