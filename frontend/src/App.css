@@ -388,3 +388,87 @@ body {
   color: #4ade80;
   margin-left: 8px;
 }
+
+/* ===== Severity Badge ===== */
+.severity-badge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: white;
+  display: inline-block;
+  text-align: center;
+  min-width: 90px;
+}
+
+.severity-badge.LOW {
+  background-color: #28a745;
+}
+
+.severity-badge.MEDIUM {
+  background-color: #ffc107;
+  color: black;
+}
+
+.severity-badge.HIGH {
+  background-color: #fd7e14;
+}
+
+.severity-badge.CRITICAL {
+  background-color: #dc3545;
+}
+
+/* ===== Threat Banner ===== */
+.threat-banner {
+  padding: 12px;
+  text-align: center;
+  font-weight: bold;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.threat-banner.NORMAL {
+  background: #d4edda;
+  color: #155724;
+}
+
+.threat-banner.ELEVATED {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.threat-banner.CRITICAL {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+/* ===== Severity Summary Counters ===== */
+.severity-summary {
+  display: flex;
+  justify-content: space-around;
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  font-weight: bold;
+}
+
+.severity-item {
+  font-size: 0.9rem;
+}
+
+.severity-item.critical {
+  color: #dc3545;
+}
+
+.severity-item.high {
+  color: #fd7e14;
+}
+
+.severity-item.medium {
+  color: #ffc107;
+}
+
+.severity-item.low {
+  color: #28a745;
+}
