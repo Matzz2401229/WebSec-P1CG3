@@ -55,7 +55,7 @@ def process_log_entry(log_entry):
             details = msg.get('details', {})
             rule_id = details.get('ruleId', 'unknown')
             # Filter out redundant anomaly scores, response body detections, and IP-based Host header warnings on dashboard
-            if str(rule_id) in ['949110', '959100', '920350']:
+            if str(rule_id) in ['949110', '959100', '920350', '911100', '953120']:
                 continue
             payload = msg.get('message', 'No message')
             
