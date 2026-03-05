@@ -54,8 +54,8 @@ def process_log_entry(log_entry):
             # FIX: ruleId is inside 'details', not at top level
             details = msg.get('details', {})
             rule_id = details.get('ruleId', 'unknown')
-            # Filter out redundant anomaly scores AND IP-based Host header warnings on dashboard
-            if str(rule_id) in ['949110', '920350']:
+            # Filter out redundant anomaly scores, response body detections, and IP-based Host header warnings on dashboard
+            if str(rule_id) in ['949110', '959100', '920350']:
                 continue
             payload = msg.get('message', 'No message')
             
